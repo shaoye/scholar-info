@@ -13,25 +13,13 @@
       <div class="row">
         <div class="col-md-3">
           <div class="list-group">
-            <button type="button"  class="list-group-item">Cras justo odio</button>
-            <button type="button" class="list-group-item">Dapibus ac facilisis in</button>
-            <button type="button" class="list-group-item">Morbi leo risus</button>
-            <button type="button" class="list-group-item">Porta ac consectetur ac</button>
-            <button type="button" class="list-group-item">Vestibulum at eros</button>
-            <button type="button"  class="list-group-item">Cras justo odio</button>
-            <button type="button" class="list-group-item">Dapibus ac facilisis in</button>
-            <button type="button" class="list-group-item">Morbi leo risus</button>
-            <button type="button" class="list-group-item">Porta ac consectetur ac</button>
-            <button type="button" class="list-group-item">Vestibulum at eros</button>
-            <button type="button" class="list-group-item">Porta ac consectetur ac</button>
-            <button type="button" class="list-group-item">Vestibulum at eros</button>
-
+            <button type="button"  class="list-group-item" v-for="teacher in teachers" @click="handleClick(teacher.name)">{{teacher.name}}</button>
           </div>
         <nav aria-label="Page navigation">
           <ul class="pagination">
             <li>
               <a href="#" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
+                <span aria-hidden="true">&laquo</span>
               </a>
             </li>
             <li><a href="#">1</a></li>
@@ -41,7 +29,7 @@
             <li><a href="#">5</a></li>
             <li>
               <a href="#" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
+                <span aria-hidden="true">&raquo</span>
               </a>
             </li>
           </ul>
@@ -51,8 +39,6 @@
           <div class="panel panel-default">
             <div class="panel-heading">Force-Chart</div>
             <div class="panel-body">
-              <h1>Test</h1>
-              <button id="teacherName" @click="handleClick('张三')">张三</button>
               <div id="main"></div>
             </div>
           </div>
@@ -69,8 +55,18 @@ export default {
   name: 'HelloWorld',
   data () {
     return {
-      teacherName: ''
+      teachers: []
+      // teachers: [
+      //   {id: 1, name: 'Richard Sutton'},
+      //   {id: 2, name: 'lisi'},
+      //   {id: 3, name: 'halowha'}
+      // ]
     }
+  },
+  mounted () {
+    this.axios.get('http://115.159.56.191/get_all_teachers').then((response) => {
+      this.teachers = response.data
+    })
   },
   methods: {
     handleClick (teacherName) {
@@ -80,25 +76,20 @@ export default {
     mountedData () {
       var myChart = window.echarts.init(document.getElementById('main'))
       myChart.showLoading()
-      $.get('https://sasc.lemoxiao.xin/download/test.gexf', function (xml) {
+      var teacherName = this.teacherName
+      $.post('http://115.159.56.191/get_relations_data', {'name': teacherName}).done(function (xml) {
         myChart.hideLoading()
         var graph = dataTool.gexf.parse(xml)
         var categories = []
-        // for (var i = 0; i < 9; i++) {
-        //     categories[i] = {
-        //         name: '类目' + i
-        //     }
-        // }
-        categories[0] = {name: '自己'}
-        categories[1] = {name: '导师'}
-        categories[2] = {name: '学生'}
+        categories[0] = {'name': '本人'}
+        categories[1] = {'name': teacherName + '的导师'}
+        categories[2] = {'name': teacherName + '的学生'}
+        categories[3] = {'name': teacherName + '的共同作者'}
         graph.nodes.forEach(function (node) {
           node.itemStyle = null
-          node.symbolSize = 10
-          node.value = node.symbolSize
-          // if node
+          // node.symbolSize = 10
+          node.value = Math.floor((node.symbolSize - 10) * 1000)
           node.category = node.attributes[0]
-          console.log(node.attributes)
           // Use random x, y
           node.x = node.y = null
           node.draggable = true
@@ -112,7 +103,7 @@ export default {
           },
           tooltip: {},
           legend: [{
-             // selectedMode: 'single',
+            // selectedMode: 'single',
             data: categories.map(function (a) {
               return a.name
             })
@@ -120,7 +111,6 @@ export default {
           animation: false,
           series: [
             {
-              // name: 'Les Miserables',
               type: 'graph',
               layout: 'force',
               data: graph.nodes,
@@ -149,10 +139,10 @@ export default {
 <style scoped>
   html, body, #main {
     width: 600px;
-    height: 400px;
+    height: 500px;
     margin: 0
-  };
+  }
   .list-group-item {
-    margin-bottom: 3px;
+    margin-bottom: 3px
   }
 </style>
